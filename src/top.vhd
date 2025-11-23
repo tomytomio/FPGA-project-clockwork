@@ -49,6 +49,7 @@ architecture rtl of top is
     signal digits_bus : unsigned(3 downto 0) vector(3 downto 0);
     signal dp : std_logic_vector(3 downto 0) := (others => '0');
     signal blink_mask_final : std_logic_vector(3 downto 0);
+    signal blink_enable_any : std_logic := '0';
 
 begin
     rst_n <= not btn0; -- btn0 active high reset
@@ -59,7 +60,7 @@ begin
 
     tm : time_manager port map(clk_10hz => tick_10hz, rst_n => rst_n, inc_tenth => tick_10hz, adj_hour => pulse_inc_hour, adj_min => pulse_inc_min, rst_sec => pulse_reset_sec, digit_h10 => d_h10, digit_h1 => d_h1, digit_m10 => d_m10, digit_m1 => d_m1, digit_s10 => d_s10, digit_s1 => d_s1, digit_tenth => d_tenth);
 
-    bl : blinker port map(tick_10hz => tick_10hz, rst_n => rst_n, enable => '1', blink_out => blink_on);
+    bl : blinker port map(tick_10hz => tick_10hz, rst_n => rst_n, enable => blink_enable_any, blink_out => blink_on);
 
     -- build display digits: by default show HH:MM on digits 3..0 (H tens, H ones, M tens, M ones)
     digits_bus(3) <= d_h10;
@@ -67,16 +68,27 @@ begin
     digits_bus(1) <= d_m10;
     digits_bus(0) <= d_m1;
 
-    -- final blink mask: when blink_on = '0', hide digits with zero in mask
+    -- final blink mask: during the ON portion of the blink cycle show all digits;
+    -- during the OFF portion hide digits that are marked to blink (blink_mask_raw bit = '1')
     process(blink_on, blink_mask_raw)
     begin
         for i in 0 to 3 loop
             if blink_on = '1' then
                 blink_mask_final(i) <= '1';
             else
-                blink_mask_final(i) <= blink_mask_raw(i);
+                blink_mask_final(i) <= not blink_mask_raw(i);
             end if;
         end loop;
+    end process;
+
+    -- enable the blinker only when any digit is set to blink in the FSM
+    process(blink_mask_raw)
+    begin
+        if blink_mask_raw = "0000" then
+            blink_enable_any <= '0';
+        else
+            blink_enable_any <= '1';
+        end if;
     end process;
 
     segdrv : seg7_driver port map(clk => clk100, rst_n => rst_n, digits => digits_bus, dp => dp, blink_mask => blink_mask_final, seg => seg, an => an);

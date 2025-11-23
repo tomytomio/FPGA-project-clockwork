@@ -35,7 +35,7 @@ begin
             pulse_inc_hour <= '0';
             pulse_inc_min <= '0';
             pulse_reset_sec <= '0';
-            blink_enable_mask <= (others => '1');
+            blink_enable_mask <= (others => '0');
         elsif rising_edge(clk_10hz) then
             -- sample
             b1_d <= b1;
@@ -69,14 +69,14 @@ begin
 
             -- blink mask: when in adjust modes (1 hour, 2 minute, 3 reset) make affected digits blink
             case cur_mode is
-                when "001" => -- set hour -> blink hour digits
-                    blink_enable_mask <= "1100"; -- left two digits visible
-                when "010" => -- set minute -> blink minute digits
+                when "001" => -- set hour -> blink hour digits (left two digits)
+                    blink_enable_mask <= "1100";
+                when "010" => -- set minute -> blink minute digits (right two digits)
                     blink_enable_mask <= "0011";
-                when "011" => -- reset seconds/tenths -> blink seconds digits
-                    blink_enable_mask <= "0000"; -- blink seconds (we won't display seconds in default)
+                when "011" => -- reset seconds/tenths -> (no main-display blink)
+                    blink_enable_mask <= "0000";
                 when others =>
-                    blink_enable_mask <= (others => '1');
+                    blink_enable_mask <= (others => '0');
             end case;
         end if;
     end process;

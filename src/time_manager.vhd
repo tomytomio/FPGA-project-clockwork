@@ -39,6 +39,14 @@ architecture rtl of time_manager is
     signal carry_s10 : std_logic;
     signal carry_m1 : std_logic;
     signal carry_m10 : std_logic;
+    signal carry_h1 : std_logic;
+    -- hour increment/load control to handle 00..23 wrapping
+    signal h1_en_raw : std_logic;
+    signal h1_en : std_logic;
+    signal h1_load : std_logic := '0';
+    signal h10_load : std_logic := '0';
+    signal h1_load_val : unsigned(3 downto 0) := (others => '0');
+    signal h10_load_val : unsigned(3 downto 0) := (others => '0');
 begin
     -- tenths (0..9) increments every 0.1s
     tenths_inst : bcd_counter
@@ -65,15 +73,15 @@ begin
         generic map (MAX_VAL => 5)
         port map(clk => clk_10hz, rst_n => rst_n, en => carry_m1, load => '0', load_val => (others => '0'), clr => '0', q => m_tens);
 
-    -- hours ones (0..9 or 3 under tens 2)
+    -- hours ones (0..9 by default, but we'll control wrapping to enforce 00..23)
     h1_inst : bcd_counter
         generic map (MAX_VAL => 9)
-        port map(clk => clk_10hz, rst_n => rst_n, en => carry_m10 or adj_hour, load => '0', load_val => (others => '0'), clr => '0', q => h_ones);
+        port map(clk => clk_10hz, rst_n => rst_n, en => h1_en, load => h1_load, load_val => h1_load_val, clr => '0', q => h_ones);
 
     -- hours tens (0..2)
     h10_inst : bcd_counter
         generic map (MAX_VAL => 2)
-        port map(clk => clk_10hz, rst_n => rst_n, en => carry_h1, load => '0', load_val => (others => '0'), clr => '0', q => h_tens);
+        port map(clk => clk_10hz, rst_n => rst_n, en => carry_h1, load => h10_load, load_val => h10_load_val, clr => '0', q => h_tens);
 
     -- carry generation
     process(clk_10hz, rst_n)
@@ -117,20 +125,39 @@ begin
                 carry_m10 <= '0';
             end if;
 
-            -- hour carry: when minutes tens carry and hours ones at 9 or if tens=2 then limit 3
-            if carry_m10 = '1' then
-                if h_ones = "1001" then
-                    carry_h1 <= '1';
-                else
+            -- hour handling: support proper 00..23 wrapping on minute carry or manual hour increment
+            -- determine if we are incrementing hours this cycle
+            h1_en_raw <= carry_m10 or adj_hour;
+            -- default: clear loads
+            h1_load <= '0';
+            h10_load <= '0';
+
+            if h1_en_raw = '1' then
+                -- if hours == 23 then wrap to 00
+                if h_tens = "0010" and h_ones = "0011" then
+                    h1_load <= '1';
+                    h1_load_val <= (others => '0');
+                    h10_load <= '1';
+                    h10_load_val <= (others => '0');
                     carry_h1 <= '0';
+                else
+                    -- normal increment: if h_ones will roll from 9->0, request carry to h10
+                    if h_ones = "1001" then
+                        carry_h1 <= '1';
+                    else
+                        carry_h1 <= '0';
+                    end if;
                 end if;
             else
                 carry_h1 <= '0';
             end if;
 
-            -- adjust pulses handled asynchronously: if adj_min pulses, we increment minute ones; adj_hour increments hours ones
-            -- For simplicity, adj_min and adj_hour are treated as single-clock pulses on clk_10hz domain
-            -- when adj occurs, we also handle hour overflow logic below by allowing counters' en pulses
+            -- finalize effective enables: if we are loading, inhibit the normal increment enable
+            if h1_load = '1' then
+                h1_en <= '0';
+            else
+                h1_en <= h1_en_raw;
+            end if;
         end if;
     end process;
 

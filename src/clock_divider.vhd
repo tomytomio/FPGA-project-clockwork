@@ -16,7 +16,9 @@ end entity;
 architecture rtl of clock_divider is
     constant CLK_FREQ : natural := 100_000_000; -- 100 MHz
     constant TICK_FREQ : natural := 10; -- 10 Hz
-    constant COUNTER_MAX : natural := CLK_FREQ / TICK_FREQ - 1;
+    -- We toggle the output to create a square wave. For a square wave at TICK_FREQ,
+    -- the half-period count must be CLK_FREQ / (2*TICK_FREQ) - 1
+    constant COUNTER_MAX : natural := CLK_FREQ / (2 * TICK_FREQ) - 1;
 
     signal cnt : unsigned(31 downto 0) := (others => '0');
     signal tick_r : std_logic := '0';
@@ -34,7 +36,7 @@ begin
             if cnt = to_unsigned(COUNTER_MAX, cnt'length) then
                 cnt <= (others => '0');
                 tick_r <= not tick_r;
-                -- manage 1 Hz (toggle every 5 ticks since 10Hz to get 1s)
+                -- manage 1 Hz: count toggles of tick_r; 10 toggles = 1 second (10 Hz)
                 if sec_cnt = 9 then
                     sec_cnt <= (others => '0');
                     one_hz <= '1';
