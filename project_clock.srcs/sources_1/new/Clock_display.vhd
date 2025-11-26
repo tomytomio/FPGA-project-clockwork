@@ -9,8 +9,6 @@ entity display_state_controller is
         rst       : in  std_logic;
         b1        : in  std_logic;  -- button to switch states
         b2        : in  std_logic;  
-        b3        : in  std_logic;  
-        b4        : in  std_logic;  
         seg       : out std_logic_vector(6 downto 0); -- segments a to g
         an        : out std_logic_vector(3 downto 0)  -- digit enable (active low)
     );

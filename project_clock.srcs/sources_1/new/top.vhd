@@ -6,12 +6,13 @@ entity top is
     Port (
         clk    : in  std_logic;  -- 100 MHz clock from Basys 3
         rst    : in  std_logic;
+        clk10hz  : out std_logic;
+        clk1khz  : out std_logic;
         b1     : in  std_logic;
         b2     : in  std_logic;
-        b3     : in  std_logic;
-        b4     : in  std_logic;
         seg    : out std_logic_vector(6 downto 0);
         an     : out std_logic_vector(3 downto 0)
+        
     );
 end top;
 
@@ -38,8 +39,6 @@ architecture Behavioral of top is
             rst       : in  std_logic;
             b1        : in  std_logic;
             b2        : in  std_logic;
-            b3        : in  std_logic;
-            b4        : in  std_logic;
             seg       : out std_logic_vector(6 downto 0);
             an        : out std_logic_vector(3 downto 0)
         );
@@ -55,19 +54,7 @@ begin
             clk10hz  => clk10hz_sig,
             clk1khz  => clk1khz_sig
         );
-
-    -- Instantiate display state controller
-    u_display_ctrl: display_state_controller
-        port map (
-            clk       => clk,
-            clk_blink => clk1khz_sig,  -- linking the 1kHz clock here
-            rst       => rst,
-            b1        => b1,
-            b2        => b2,
-            b3        => b3,
-            b4        => b4,
-            seg       => seg,
-            an        => an
-        );
+    clk10Hz<=clk10Hz_sig;
+    clk1kHz<=clk1kHz_sig;
 
 end Behavioral;

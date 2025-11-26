@@ -8,14 +8,15 @@ entity clock_divider is
         clk      : in  std_logic;  -- 100 MHz input clock
         rst      : in  std_logic;  -- active-high reset
         clk10hz  : out std_logic;   -- output clock at 10 Hz (0.1 sec period)
-        clk1khz  : out std_logic   -- output clock at 10 Hz (0.1 sec period)
+        clk1khz  : out std_logic   -- output clock at 10 Hz (0.001 sec period)
 
     );
+    
 end clock_divider;
 
 architecture Behavioral of clock_divider is
-    constant MAX_10hz : integer := 50; -- to change for accurate reading
-    constant MAX_1khz : integer := 5000; -- to change for accurate reading
+    constant MAX_10hz : integer := 10_000_000 - 1; -- to change for accurate reading
+    constant MAX_1khz : integer := 100_000; -- to change for accurate reading
     signal counter10hz     : integer range 0 to MAX_10hz := 0;
     signal counter1khz     : integer range 0 to MAX_1khz := 0;
 
@@ -26,7 +27,7 @@ begin
     process(clk, rst)
     begin
         if rst = '1' then
-            counter10hz  <= 0;
+            counter10hz <= 0;
             counter1khz <= 0;
             clk_reg10hz <= '0';
             clk_reg1khz <= '0';
