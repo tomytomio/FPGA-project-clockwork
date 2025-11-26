@@ -3,15 +3,16 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.types_pkg.all;
 
 entity seg7_driver is
     port (
         clk    : in std_logic; -- fast clock (we'll use 100 MHz divided externally or use 10kHz)
         rst_n  : in std_logic;
-        digits : in unsigned(3 downto 0) vector(3 downto 0); -- 4 digits [3]=leftmost
-        dp     : in std_logic_vector(3 downto 0); -- decimal points per digit
-        blink_mask : in std_logic_vector(3 downto 0); -- '1' = visible, '0' = hidden when blinking off
-        seg    : out std_logic_vector(6 downto 0); -- segments a..g
+        digits : in digit_array; -- 4 digits [3]=leftmost
+        dp     : in std_logic_vector(3 downto 0); -- decimal points per digit (1 = show DP)
+        blink_mask : in std_logic_vector(3 downto 0); -- '1' = blink-enabled
+        seg    : out std_logic_vector(7 downto 0); -- segments a..g + dp (dp at bit 7)
         an     : out std_logic_vector(3 downto 0)  -- anodes (active low on Basys3)
     );
 end entity;
@@ -21,10 +22,10 @@ architecture rtl of seg7_driver is
     constant REF_WIDTH : natural := 12; -- adjust for refresh rate
     signal ref_cnt : unsigned(REF_WIDTH-1 downto 0) := (others => '0');
     signal sel : unsigned(1 downto 0) := (others => '0');
-    signal seg_r : std_logic_vector(6 downto 0);
+    signal seg_r : std_logic_vector(7 downto 0);
     signal an_r  : std_logic_vector(3 downto 0) := (others => '1');
 
-    function to_segments(d : unsigned(3 downto 0)) return std_logic_vector is
+    function to_segments(d : digit_t) return std_logic_vector is
         variable s : std_logic_vector(6 downto 0);
     begin
         case to_integer(d) is
@@ -60,24 +61,40 @@ begin
     begin
         case to_integer(sel) is
             when 0 =>
-                seg_r <= to_segments(digits(0));
+                seg_r(6 downto 0) <= to_segments(digits(0));
                 an_r  <= "1110"; -- active low -> digit 0 active
-                if dp(0) = '1' then seg_r(6) <= '1'; end if; -- dp mapped to g bit placeholder
+                if dp(0) = '1' then
+                    seg_r(7) <= '0'; -- active low segments: '0' lights segment
+                else
+                    seg_r(7) <= '1';
+                end if;
                 if blink_mask(0) = '0' then seg_r <= (others => '1'); end if;
             when 1 =>
-                seg_r <= to_segments(digits(1));
+                seg_r(6 downto 0) <= to_segments(digits(1));
                 an_r  <= "1101";
-                if dp(1) = '1' then seg_r(6) <= '1'; end if;
+                if dp(1) = '1' then
+                    seg_r(7) <= '0';
+                else
+                    seg_r(7) <= '1';
+                end if;
                 if blink_mask(1) = '0' then seg_r <= (others => '1'); end if;
             when 2 =>
-                seg_r <= to_segments(digits(2));
+                seg_r(6 downto 0) <= to_segments(digits(2));
                 an_r  <= "1011";
-                if dp(2) = '1' then seg_r(6) <= '1'; end if;
+                if dp(2) = '1' then
+                    seg_r(7) <= '0';
+                else
+                    seg_r(7) <= '1';
+                end if;
                 if blink_mask(2) = '0' then seg_r <= (others => '1'); end if;
             when others =>
-                seg_r <= to_segments(digits(3));
+                seg_r(6 downto 0) <= to_segments(digits(3));
                 an_r  <= "0111";
-                if dp(3) = '1' then seg_r(6) <= '1'; end if;
+                if dp(3) = '1' then
+                    seg_r(7) <= '0';
+                else
+                    seg_r(7) <= '1';
+                end if;
                 if blink_mask(3) = '0' then seg_r <= (others => '1'); end if;
         end case;
     end process;

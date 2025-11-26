@@ -12,27 +12,26 @@ architecture sim of time_tb is
     signal btn0 : std_logic := '0';
     signal btn1 : std_logic := '0';
     signal btn2 : std_logic := '0';
-    signal seg : std_logic_vector(6 downto 0);
+    signal seg : std_logic_vector(7 downto 0);
     signal an  : std_logic_vector(3 downto 0);
     signal led : std_logic_vector(15 downto 0);
 
     component top
-        port(clk100: in std_logic; btn0: in std_logic; btn1: in std_logic; btn2: in std_logic; seg: out std_logic_vector(6 downto 0); an: out std_logic_vector(3 downto 0); led: out std_logic_vector(15 downto 0));
+        port(clk100: in std_logic; btn0: in std_logic; btn1: in std_logic; btn2: in std_logic; seg: out std_logic_vector(7 downto 0); an: out std_logic_vector(3 downto 0); led: out std_logic_vector(15 downto 0));
     end component;
 
 begin
     uut: top port map(clk100 => clk100, btn0 => btn0, btn1 => btn1, btn2 => btn2, seg => seg, an => an, led => led);
 
-    -- CLK 100 MHz
+    -- CLK 100 MHz (run for entire simulation)
     clk_proc: process
     begin
-        while now < 200 ms loop
+        loop
             clk100 <= '0';
             wait for 5 ns;
             clk100 <= '1';
             wait for 5 ns;
         end loop;
-        wait;
     end process;
 
     stim_proc: process

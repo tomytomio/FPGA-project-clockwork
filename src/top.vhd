@@ -3,6 +3,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+use work.types_pkg.all;
 
 entity top is
     port (
@@ -11,7 +12,7 @@ entity top is
         btn1 : in std_logic; -- b1 mode
         btn2 : in std_logic; -- b2 action
         -- leds and seven seg pins
-        seg : out std_logic_vector(6 downto 0);
+        seg : out std_logic_vector(7 downto 0); -- include dp at bit 7
         an  : out std_logic_vector(3 downto 0);
         led : out std_logic_vector(15 downto 0)
     );
@@ -35,7 +36,7 @@ architecture rtl of top is
     end component;
 
     component seg7_driver
-        port(clk: in std_logic; rst_n: in std_logic; digits: in unsigned(3 downto 0) vector(3 downto 0); dp: in std_logic_vector(3 downto 0); blink_mask: in std_logic_vector(3 downto 0); seg: out std_logic_vector(6 downto 0); an: out std_logic_vector(3 downto 0));
+        port(clk: in std_logic; rst_n: in std_logic; digits: in digit_array; dp: in std_logic_vector(3 downto 0); blink_mask: in std_logic_vector(3 downto 0); seg: out std_logic_vector(7 downto 0); an: out std_logic_vector(3 downto 0));
     end component;
 
     signal rst_n : std_logic;
@@ -46,10 +47,13 @@ architecture rtl of top is
     signal pulse_inc_hour, pulse_inc_min, pulse_reset_sec : std_logic;
     signal blink_mask_raw : std_logic_vector(3 downto 0);
     signal blink_on : std_logic;
-    signal digits_bus : unsigned(3 downto 0) vector(3 downto 0);
+    signal digits_bus : digit_array;
     signal dp : std_logic_vector(3 downto 0) := (others => '0');
     signal blink_mask_final : std_logic_vector(3 downto 0);
     signal blink_enable_any : std_logic := '0';
+    signal show_seconds : std_logic := '0';
+    signal b2_d_top : std_logic := '0';
+    signal blank_digit : digit_t := (others => '1');
 
 begin
     rst_n <= not btn0; -- btn0 active high reset
@@ -62,21 +66,49 @@ begin
 
     bl : blinker port map(tick_10hz => tick_10hz, rst_n => rst_n, enable => blink_enable_any, blink_out => blink_on);
 
-    -- build display digits: by default show HH:MM on digits 3..0 (H tens, H ones, M tens, M ones)
-    digits_bus(3) <= d_h10;
-    digits_bus(2) <= d_h1;
-    digits_bus(1) <= d_m10;
-    digits_bus(0) <= d_m1;
+    -- handle show-seconds toggle (b2 rising edge in normal mode toggles seconds display)
+    process(tick_10hz, rst_n)
+    begin
+        if rst_n = '0' then
+            b2_d_top <= '0';
+            show_seconds <= '0';
+        elsif rising_edge(tick_10hz) then
+            b2_d_top <= btn2;
+            if btn2 = '1' and b2_d_top = '0' and mode = "000" then
+                show_seconds <= not show_seconds;
+            end if;
+        end if;
+    end process;
 
-    -- final blink mask: during the ON portion of the blink cycle show all digits;
-    -- during the OFF portion hide digits that are marked to blink (blink_mask_raw bit = '1')
+    -- build display digits: show HH:MM by default; if show_seconds then show --SS on right two digits
+    process(d_h10, d_h1, d_m10, d_m1, d_s10, d_s1, show_seconds, blank_digit)
+    begin
+        if show_seconds = '1' then
+            digits_bus(3) <= blank_digit;
+            digits_bus(2) <= blank_digit;
+            digits_bus(1) <= d_s10;
+            digits_bus(0) <= d_s1;
+        else
+            digits_bus(3) <= d_h10;
+            digits_bus(2) <= d_h1;
+            digits_bus(1) <= d_m10;
+            digits_bus(0) <= d_m1;
+        end if;
+    end process;
+
+    -- final blink mask: when a digit is marked to blink (blink_mask_raw bit = '1') its visibility follows blink_on;
+    -- otherwise it is always visible ('1')
     process(blink_on, blink_mask_raw)
     begin
         for i in 0 to 3 loop
-            if blink_on = '1' then
-                blink_mask_final(i) <= '1';
+            if blink_mask_raw(i) = '1' then
+                if blink_on = '1' then
+                    blink_mask_final(i) <= '1';
+                else
+                    blink_mask_final(i) <= '0';
+                end if;
             else
-                blink_mask_final(i) <= not blink_mask_raw(i);
+                blink_mask_final(i) <= '1';
             end if;
         end loop;
     end process;
