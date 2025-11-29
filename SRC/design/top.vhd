@@ -31,19 +31,6 @@ architecture Behavioral of top is
             clk1khz  : out std_logic
         );
     end component;
-
-    component display_state_controller
-        Port (
-            clk       : in  std_logic;
-            clk_blink : in  std_logic;
-            rst       : in  std_logic;
-            b1        : in  std_logic;
-            b2        : in  std_logic;
-            seg       : out std_logic_vector(6 downto 0);
-            an        : out std_logic_vector(3 downto 0)
-        );
-    end component;
-
 begin
 
     -- Instantiate clock divider
