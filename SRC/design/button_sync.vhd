@@ -16,7 +16,7 @@ entity button_sync is
         button2_pulse  : out std_logic;
         button2_raw    : out std_logic;
         button3_pulse  : out std_logic;
-        button3_raw    : out std_logic;
+        button3_raw    : out std_logic
     );
 end button_sync;
 
