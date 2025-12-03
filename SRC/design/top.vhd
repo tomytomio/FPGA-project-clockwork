@@ -6,13 +6,10 @@ entity top is
     Port (
         clk    : in  std_logic;  -- 100 MHz clock from Basys 3
         rst    : in  std_logic;
-        clk10hz  : out std_logic; -- 10 Hz clock for timer logic
-        clk1khz  : out std_logic; -- 1kHz clock for display logic
+        b0     : in  std_logic;
         b1     : in  std_logic;
-        b2     : in  std_logic;
         seg    : out std_logic_vector(6 downto 0);
         an     : out std_logic_vector(3 downto 0)
-        
     );
 end top;
 
@@ -120,16 +117,14 @@ begin
             clk10hz  => clk10hz_sig,
             clk1khz  => clk1khz_sig
         );
-    clk10Hz<=clk10Hz_sig;
-    clk1kHz<=clk1kHz_sig;
 
     u_button_sync: button_sync
         port map (
             clk10hz       => clk10hz_sig,
             rst           => rst,
 
-            button0_in    => b1,        -- Basys button b1
-            button1_in    => b2,        -- Basys button b2
+            button0_in    => b0,        -- Basys button b1
+            button1_in    => b1,        -- Basys button b2
             button2_in    => '0',       -- unused yet
             button3_in    => '0',       -- unused yet
 
@@ -173,7 +168,7 @@ begin
 
             clk1khz => clk1khz_sig,
             status  => status,
-            button1 => button1_raw,
+            button1 => b1,
             alarm_on => '0',
 
             an      => an,
