@@ -16,7 +16,7 @@ end clock_divider;
 
 architecture Behavioral of clock_divider is
     constant MAX_10hz : integer := 10_000_000 - 1; -- to change for accurate reading
-    constant MAX_1khz : integer := 100_000; -- to change for accurate reading
+    constant MAX_1khz : integer := 100_000 -1; -- to change for accurate reading
     signal counter10hz     : integer range 0 to MAX_10hz := 0;
     signal counter1khz     : integer range 0 to MAX_1khz := 0;
 
