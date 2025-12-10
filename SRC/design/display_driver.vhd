@@ -35,7 +35,7 @@ architecture Behavioral of display_driver is
     signal blink_digit      : std_logic_vector(3 downto 0); -- which digits should blink
     signal blink_state      : std_logic := '1'; --1 for light on , 0 otherwise
     
-    constant blink_interval : integer := 20;  -- number of clk1khz cycles between blinks
+    constant blink_interval : integer := 1_000_000;  -- number of clk1khz cycles between blinks
     constant blink_duration : integer := 7;  -- number of cycles the visible phase lasts
     signal blink_counter    : integer range 0 to blink_interval := 0;
 
@@ -44,25 +44,25 @@ architecture Behavioral of display_driver is
         variable p : std_logic_vector(6 downto 0) := (others => '0');
     begin
         case sym is
-            when 0  => p := "1111110"; -- 0 = 126
-            when 1  => p := "0110000"; -- 1 = 48
-            when 2  => p := "1101101"; -- 2 = 109
-            when 3  => p := "1111001"; -- 3 = 121
-            when 4  => p := "0110011"; -- 4 = 51
-            when 5  => p := "1011011"; -- 5 = 91
-            when 6  => p := "1011111"; -- 6 = 95
-            when 7  => p := "1110000"; -- 7 = 112
-            when 8  => p := "1111111"; -- 8 = 127
-            when 9  => p := "1111011"; -- 9 = 123 
-            when 10 => p := "1110111"; -- A = 119
-            when 11 => p := "0001110"; -- L = 14
-            when 12 => p := "0011101"; -- S = 290
-            when 13 => p := "0000111"; -- T = 7 
-            when 14 => p := "1001110"; -- O = 78
-            when 15 => p := "1001111"; -- f = 79
-            when 16 => p := "0000101"; -- n = 5
-            when 17 => p := "0000000"; -- _ = 0
-            when others => p := "0000000";
+            when 0  => p := "0000001"; -- 0 = 126
+            when 1  => p := "1001111"; -- 1 = 48
+            when 2  => p := "0010010"; -- 2 = 109
+            when 3  => p := "0000110"; -- 3 = 121
+            when 4  => p := "1001100"; -- 4 = 51
+            when 5  => p := "0100100"; -- 5 = 91
+            when 6  => p := "0100000"; -- 6 = 95
+            when 7  => p := "0001111"; -- 7 = 112
+            when 8  => p := "0000000"; -- 8 = 127
+            when 9  => p := "0000100"; -- 9 = 123 
+            when 10 => p := "0001000"; -- A = 119
+            when 11 => p := "1110001"; -- L = 14
+            when 12 => p := "0100100"; -- S = 290
+            when 13 => p := "1110000"; -- T = 7 
+            when 14 => p := "0000001"; -- O = 78
+            when 15 => p := "0111000"; -- f = 79
+            when 16 => p := "1101010"; -- n = 5
+            when 17 => p := "1110111"; -- _ = 0
+            when others => p := "1111111";
         end case;
         return p;
     end function;
@@ -139,21 +139,21 @@ begin
                     display_digit(2) <= std_logic_vector(to_unsigned(hu_i,5));
                     display_digit(1) <= std_logic_vector(to_unsigned(12,5)); -- 'S' symbol id 12
                     display_digit(0) <= std_logic_vector(to_unsigned(13,5)); -- 'T' symbol id 13
-                    blink_digit <= "0011"; -- blink last two digits
+                    blink_digit <= "1100"; -- blink last two digits
 
                 when "0010" => -- 2 set minute: St:MM (St blinking)
                     display_digit(3) <= std_logic_vector(to_unsigned(12,5)); -- S
                     display_digit(2) <= std_logic_vector(to_unsigned(13,5)); -- T
                     display_digit(1) <= std_logic_vector(to_unsigned(md_i,5));
                     display_digit(0) <= std_logic_vector(to_unsigned(mu_i,5));
-                    blink_digit <= "1100"; -- blink first two digits
+                    blink_digit <= "0011"; -- blink first two digits
 
                 when "0011" => -- 3 reset: SS:St (St blinking)
                     display_digit(3) <= std_logic_vector(to_unsigned(sd_i,5));
                     display_digit(2) <= std_logic_vector(to_unsigned(su_i,5));
                     display_digit(1) <= std_logic_vector(to_unsigned(12,5)); -- S
                     display_digit(0) <= std_logic_vector(to_unsigned(13,5)); -- T
-                    blink_digit <= "0011"; -- blink last two digits
+                    blink_digit <= "1100"; -- blink last two digits
 
                 when "0100" => -- 4 toggle: ALOn / ALOf
                     display_digit(3) <= std_logic_vector(to_unsigned(10,5)); -- A
@@ -171,14 +171,14 @@ begin
                     display_digit(2) <= std_logic_vector(to_unsigned(hu_i,5));
                     display_digit(1) <= std_logic_vector(to_unsigned(10,5)); -- A
                     display_digit(0) <= std_logic_vector(to_unsigned(11,5)); -- L
-                    blink_digit <= "0011"; -- blink last two digits
+                    blink_digit <= "1100"; -- blink last two digits
 
                 when "0110" => -- 6 set alarm: AL:MM (AL blinking)
                     display_digit(3) <= std_logic_vector(to_unsigned(10,5)); -- A
                     display_digit(2) <= std_logic_vector(to_unsigned(11,5)); -- L
                     display_digit(1) <= std_logic_vector(to_unsigned(md_i,5));
                     display_digit(0) <= std_logic_vector(to_unsigned(mu_i,5));
-                    blink_digit <= "1100"; -- blink first two digits
+                    blink_digit <= "0011"; -- blink first two digits
 
                 when others =>
                     display_digit(3) <= std_logic_vector(to_unsigned(hd_i,5));
@@ -208,17 +208,17 @@ begin
 
         -- if blink is required for this digit and blink_state = '0' then blank
         if blink_digit(3-digit_select) = '1' and blink_state = '0' then
-            seg <= (others => '0');
+            seg <= sym_to_seg(18);
         else
             seg <= sym_to_seg(sym_id);
         end if;
 
         -- drive anodes (active low) for multiplexing
         case digit_select is
-            when 0 => an <= "0001"; -- rightmost digit active (an(0) low)
-            when 1 => an <= "0010";
-            when 2 => an <= "0100";
-            when 3 => an <= "1000"; -- leftmost active
+            when 0 => an <= "0111"; -- rightmost digit active (an(0) low)
+            when 1 => an <= "1011";
+            when 2 => an <= "1101";
+            when 3 => an <= "1110"; -- leftmost active
         end case;
 
     end process digit_to_segment_proc;

@@ -24,7 +24,7 @@ architecture Behavioral of top is
     signal button2_pulse : std_logic;
     signal button3_pulse : std_logic;
 
-    signal button1_raw   : std_logic;
+    signal button0_raw   : std_logic;
 
     signal status : std_logic_vector(3 downto 0);
 
@@ -54,8 +54,8 @@ architecture Behavioral of top is
             button3_in    : in  std_logic;
 
             button0_pulse : out std_logic;
+            button0_raw   : out std_logic;
             button1_pulse : out std_logic;
-            button1_raw   : out std_logic;
             button2_pulse : out std_logic;
             button3_pulse : out std_logic
         );
@@ -130,7 +130,7 @@ begin
 
             button0_pulse => button0_pulse,
             button1_pulse => button1_pulse,
-            button1_raw   => button1_raw,
+            button0_raw   => button0_raw,
             button2_pulse => button2_pulse,
             button3_pulse => button3_pulse
         );

@@ -12,11 +12,8 @@ entity button_sync is
         button0_pulse  : out std_logic;
         button0_raw    : out std_logic;
         button1_pulse  : out std_logic;
-        button1_raw    : out std_logic;
         button2_pulse  : out std_logic;
-        button2_raw    : out std_logic;
-        button3_pulse  : out std_logic;
-        button3_raw    : out std_logic
+        button3_pulse  : out std_logic
     );
 end button_sync;
 
@@ -58,8 +55,5 @@ button1_pulse <= '1' when (button1_prev = '0' and button1_curr = '1') else '0';
 button2_pulse <= '1' when (button2_prev = '0' and button2_curr = '1') else '0';
 button3_pulse <= '1' when (button3_prev = '0' and button3_curr = '1') else '0';
 button0_raw   <= button0_curr;
-button1_raw   <= button1_curr;
-button2_raw   <= button2_curr;
-button3_raw   <= button3_curr;
 
 end Behavioral;

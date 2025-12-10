@@ -37,6 +37,9 @@ begin
                 counter10hz <= 0;
                 clk_reg10hz <= not clk_reg10hz;
             else
+                if counter10hz = MAX_10hz/2 then
+                     clk_reg10hz <= not clk_reg10hz;
+                end if;
                 counter10hz <= counter10hz + 1;
             end if;
             
@@ -44,6 +47,9 @@ begin
                 counter1khz <= 0;
                 clk_reg1khz <= not clk_reg1khz;
             else
+                if counter1khz = MAX_1khz/2 then
+                     clk_reg1khz <= not clk_reg1khz;
+                end if;
                 counter1khz <= counter1khz + 1;
             end if;
             
